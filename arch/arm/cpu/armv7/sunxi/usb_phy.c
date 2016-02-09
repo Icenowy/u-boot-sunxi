@@ -34,6 +34,16 @@
 #define REG_PHY_UNK_H3			0x420
 #define REG_PMU_UNK_H3			0x810
 
+/* A83T specific control bits for PHY0 */
+#define SUNXI_PHY_CTL_VBUSVLDEXT	BIT(5)
+#define SUNXI_PHY_CTL_SIDDQ		BIT(3)
+
+/* A83T HSIC specific bits */
+#define SUNXI_EHCI_HS_FORCE		BIT(20)
+#define SUNXI_EHCI_CONNECT_DET		BIT(17)
+#define SUNXI_EHCI_CONNECT_INT		BIT(16)
+#define SUNXI_EHCI_HSIC			BIT(1)
+
 static struct sunxi_usb_phy {
 	int usb_rst_mask;
 	int gpio_vbus;
@@ -55,6 +65,14 @@ static struct sunxi_usb_phy {
 		.base = SUNXI_USB1_BASE,
 	},
 #if CONFIG_SUNXI_USB_PHYS >= 3
+#ifdef CONFIG_MACH_SUN8I_A83T
+	{
+		.usb_rst_mask = CCM_USB_CTRL_HSIC_RST | CCM_USB_CTRL_HSIC_CLK |
+				CCM_USB_CTRL_12M_CLK,
+		.id = 2,
+		.base = SUNXI_USB2_BASE,
+	}
+#else
 	{
 		.usb_rst_mask = CCM_USB_CTRL_PHY2_RST | CCM_USB_CTRL_PHY2_CLK,
 		.id = 2,
@@ -67,6 +85,7 @@ static struct sunxi_usb_phy {
 		.id = 3,
 		.base = SUNXI_USB3_BASE,
 	}
+#endif
 #endif
 };
 
@@ -144,6 +163,7 @@ static void sunxi_usb_phy_config(struct sunxi_usb_phy *phy)
 	 * translated from Chinese, you have been warned!
 	 */
 
+#ifndef CONFIG_MACH_SUN8I_A83T
 	/* Regulation 45 ohms */
 	if (phy->id == 0)
 		usb_phy_write(phy, 0x0c, 0x01, 1);
@@ -156,6 +176,7 @@ static void sunxi_usb_phy_config(struct sunxi_usb_phy *phy)
 	usb_phy_write(phy, 0x2a, 2, 2);
 #else
 	usb_phy_write(phy, 0x2a, 3, 2);
+#endif
 #endif
 
 	return;
@@ -173,6 +194,13 @@ static void sunxi_usb_phy_passby(struct sunxi_usb_phy *phy, int enable)
 		SUNXI_EHCI_AHB_INCR4_BURST_EN |
 		SUNXI_EHCI_AHB_INCRX_ALIGN_EN |
 		SUNXI_EHCI_ULPI_BYPASS_EN;
+
+#ifdef CONFIG_MACH_SUN8I_A83T
+	if (phy->id == 2)
+		bits |= SUNXI_EHCI_HS_FORCE |
+			SUNXI_EHCI_CONNECT_INT |
+			SUNXI_EHCI_HSIC;
+#endif
 
 	if (enable)
 		setbits_le32(addr, bits);
@@ -204,6 +232,15 @@ void sunxi_usb_phy_init(int index)
 
 	if (phy->id != 0)
 		sunxi_usb_phy_passby(phy, SUNXI_USB_PASSBY_EN);
+
+#ifdef CONFIG_MACH_SUN8I_A83T
+	if (phy->id == 0) {
+		setbits_le32(SUNXI_USB0_BASE + SUNXI_USB_CSR,
+			     SUNXI_PHY_CTL_VBUSVLDEXT);
+		clrbits_le32(SUNXI_USB0_BASE + SUNXI_USB_CSR,
+			     SUNXI_PHY_CTL_SIDDQ);
+	}
+#endif
 }
 
 void sunxi_usb_phy_exit(int index)
@@ -217,6 +254,13 @@ void sunxi_usb_phy_exit(int index)
 
 	if (phy->id != 0)
 		sunxi_usb_phy_passby(phy, !SUNXI_USB_PASSBY_EN);
+
+#ifdef CONFIG_MACH_SUN8I_A83T
+	if (phy->id == 0) {
+		setbits_le32(SUNXI_USB0_BASE + SUNXI_USB_CSR,
+			     SUNXI_PHY_CTL_SIDDQ);
+	}
+#endif
 
 	clrbits_le32(&ccm->usb_clk_cfg, phy->usb_rst_mask);
 }
