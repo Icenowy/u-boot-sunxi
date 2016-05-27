@@ -27,17 +27,17 @@
 #define	GICD_BASE	(SUNXI_GIC400_BASE + GIC_DIST_OFFSET)
 #define	GICC_BASE	(SUNXI_GIC400_BASE + GIC_CPU_OFFSET_A15)
 
-static void cp15_write_cntp_tval(u32 tval)
+static void __secure cp15_write_cntp_tval(u32 tval)
 {
 	asm volatile ("mcr p15, 0, %0, c14, c2, 0" : : "r" (tval));
 }
 
-static void cp15_write_cntp_ctl(u32 val)
+static void __secure cp15_write_cntp_ctl(u32 val)
 {
 	asm volatile ("mcr p15, 0, %0, c14, c2, 1" : : "r" (val));
 }
 
-static u32 cp15_read_cntp_ctl(void)
+static u32 __secure cp15_read_cntp_ctl(void)
 {
 	u32 val;
 
@@ -60,11 +60,12 @@ static void __secure __mdelay(u32 ms)
 	} while (!(reg & BIT(2)));
 
 	cp15_write_cntp_ctl(0);
+	ISB;
 }
 
 #ifdef CONFIG_MACH_SUN7I
 /* sun7i (A20) is different from other single cluster SoCs */
-static void sunxi_cpu_set_power(int __always_unused cpu, bool on)
+static void __secure sunxi_cpu_set_power(int __always_unused cpu, bool on)
 {
 	struct sunxi_cpucfg_reg *cpucfg =
 		(struct sunxi_cpucfg_reg *)SUNXI_CPUCFG_BASE;
@@ -90,7 +91,7 @@ static void sunxi_cpu_set_power(int __always_unused cpu, bool on)
 	}
 }
 #else /* ! CONFIG_MACH_SUN7I */
-static void sunxi_cpu_set_power(int cpu, bool on)
+static void __secure sunxi_cpu_set_power(int cpu, bool on)
 {
 	struct sunxi_prcm_reg *prcm =
 		(struct sunxi_prcm_reg *)SUNXI_PRCM_BASE;
@@ -159,6 +160,7 @@ static u32 cp15_read_scr(void)
 static void cp15_write_scr(u32 scr)
 {
 	asm volatile ("mcr p15, 0, %0, c1, c1, 0" : : "r" (scr));
+	ISB;
 }
 
 /*
@@ -174,7 +176,6 @@ void __secure __irq psci_fiq_enter(void)
 	/* Switch to secure mode */
 	scr = cp15_read_scr();
 	cp15_write_scr(scr & ~BIT(0));
-	ISB;
 
 	/* Validate reason based on IAR and acknowledge */
 	reg = readl(GICC_BASE + GICC_IAR);
@@ -265,5 +266,4 @@ void __secure sunxi_gic_init(void)
 	reg |= BIT(2);  /* Enable FIQ in monitor mode */
 	reg &= ~BIT(0); /* Secure mode */
 	cp15_write_scr(reg);
-	ISB;
 }
