@@ -50,7 +50,7 @@ SECTIONS
 
 #ifndef CONFIG_ARMV7_SECURE_BASE
 #define CONFIG_ARMV7_SECURE_BASE
-#define __ARMV7_ALLOCATE_SECURE_STACK
+#define __ARMV7_PSCI_STACK_IN_RAM
 #endif
 
 	.__secure_start : {
@@ -68,10 +68,10 @@ SECTIONS
 		SIZEOF(.__secure_start) +
 		SIZEOF(.secure_text);
 
-#ifdef __ARMV7_ALLOCATE_SECURE_STACK
+#ifdef __ARMV7_PSCI_STACK_IN_RAM
 	/* Align to page boundary and skip 2 pages */
 	. = (. & ~ 0xfff) + 0x2000;
-#undef __ARMV7_ALLOCATE_SECURE_STACK
+#undef __ARMV7_PSCI_STACK_IN_RAM
 #endif
 
 	__secure_end_lma = .;
