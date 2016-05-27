@@ -34,7 +34,6 @@
 
 #ifndef __ASSEMBLY__
 #include <asm/types.h>
-#include <linux/compiler.h>
 
 void psci_cpu_entry(void);
 u32 psci_get_cpu_id(void);
