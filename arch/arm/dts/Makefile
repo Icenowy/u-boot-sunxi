@@ -216,7 +216,8 @@ dtb-$(CONFIG_MACH_SUN8I_H3) += \
 	sun8i-h3-orangepi-2.dtb \
 	sun8i-h3-orangepi-one.dtb \
 	sun8i-h3-orangepi-pc.dtb \
-	sun8i-h3-orangepi-plus.dtb
+	sun8i-h3-orangepi-plus.dtb \
+	sun8i-h3-sinovoip-bpi-m2-plus.dtb
 dtb-$(CONFIG_MACH_SUN50I) += \
 	sun50i-a64-pine64-plus.dtb \
 	sun50i-a64-pine64.dtb

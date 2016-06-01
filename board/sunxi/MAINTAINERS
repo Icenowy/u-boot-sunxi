@@ -212,6 +212,11 @@ S:	Maintained
 F:	configs/Sinlinx_SinA33_defconfig
 W:	http://linux-sunxi.org/Sinlinx_SinA33
 
+SINOVOIP BPI M2+ A83T BOARD
+M:	Chen-Yu Tsai <wens@csie.org>
+S:	Maintained
+F:	configs/Sinovoip_BPI_M2_plus_defconfig
+
 SINOVOIP BPI M3 A83T BOARD
 M:	VishnuPatekar <vishnupatekar0510@gmail.com>
 S:	Maintained
