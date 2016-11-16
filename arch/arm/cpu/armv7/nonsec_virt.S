@@ -35,6 +35,12 @@ _monitor_vectors:
 	cmp	\tmp, #(1 << CPUID_ARM_VIRT_SHIFT)
 .endm
 
+.macro uart0_write  char, tmp, tmp2
+	mov	\tmp, #\char
+	ldr	\tmp2, =SUNXI_UART0_BASE
+	str	\tmp, [\tmp2]
+.endm
+
 /*
  * secure monitor handler
  * U-Boot calls this "software interrupt" in start.S
@@ -44,10 +50,13 @@ _monitor_vectors:
  * ip: target PC
  */
 _secure_monitor:
+	uart0_write 'S', r5, r6
 #ifdef CONFIG_ARMV7_PSCI
 	ldr	r5, =_psci_vectors		@ Switch to the next monitor
 	mcr	p15, 0, r5, c12, c0, 1
 	isb
+
+	uart0_write 'p', r5, r6
 
 	@ Obtain a secure stack
 	bl	psci_stack_setup

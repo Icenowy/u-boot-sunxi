@@ -42,6 +42,8 @@ static unsigned long get_gicd_base_address(void)
 		return -1;
 	}
 
+	printf("%s: CBAR PERIPHBASE is 0x%08x\n", __func__, periphbase);
+
 	return (periphbase & CBAR_MASK) + GIC_DIST_OFFSET;
 #endif
 }
@@ -99,6 +101,8 @@ int armv7_init_nonsec(void)
 		return -1;
 	}
 
+	printf("%s: has security extensions!\n", __func__);
+
 	/* the SCR register will be set directly in the monitor mode handler,
 	 * according to the spec one should not tinker with it in secure state
 	 * in SVC mode. Do not try to read it once in non-secure state,
@@ -108,6 +112,8 @@ int armv7_init_nonsec(void)
 	gic_dist_addr = get_gicd_base_address();
 	if (gic_dist_addr == -1)
 		return -1;
+
+	printf("%s: found GIC distributor at 0x%08lx!\n", __func__, gic_dist_addr);
 
 	/* enable the GIC distributor */
 	writel(readl(gic_dist_addr + GICD_CTLR) | 0x03,
@@ -123,7 +129,11 @@ int armv7_init_nonsec(void)
 	for (i = 1; i <= itlinesnr; i++)
 		writel((unsigned)-1, gic_dist_addr + GICD_IGROUPRn + 4 * i);
 
+	printf("%s: configured GIC distributor!\n", __func__);
+
 	psci_board_init();
+
+	printf("%s: psci_board_init!\n", __func__);
 
 	/*
 	 * Relocate secure section before any cpu runs in secure ram.
@@ -133,6 +143,8 @@ int armv7_init_nonsec(void)
 	 */
 	relocate_secure_section();
 
+	printf("%s: relocated secure section\n", __func__);
+
 #ifndef CONFIG_ARMV7_PSCI
 	smp_set_core_boot_addr((unsigned long)secure_ram_addr(_smp_pen), -1);
 	smp_kick_all_cpus();
@@ -140,5 +152,6 @@ int armv7_init_nonsec(void)
 
 	/* call the non-sec switching code on this CPU also */
 	secure_ram_addr(_nonsec_init)();
+	printf("%s: non-secure init\n", __func__);
 	return 0;
 }
